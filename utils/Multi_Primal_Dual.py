@@ -8,9 +8,8 @@ np.random.seed(42)
 import sys
 
 sys.path.append('../utils')
-from Hedge import HedgeAgent
+from Hedge import HedgeAgent1D
 from EXP3_P import Exp3Agent
-
 
 class MultiProductPrimalDualAgent:
     """
@@ -68,7 +67,7 @@ class MultiProductPrimalDualAgent:
         if algorithm == 'Hedge':
             # Hedge requires full feedback - we'll compute counterfactual rewards
             lr = np.sqrt(max(1e-12, np.log(self.K)) / max(1, T))
-            self.learners = [HedgeAgent(self.K, lr) for _ in range(self.n_products)]
+            self.learners = [HedgeAgent1D(self.K, lr) for _ in range(self.n_products)]
         else:  # Exp3
             # EXP3 uses bandit feedback - only selected arm reward
             lr = np.sqrt(max(1e-12, np.log(self.K)) / max(1, T * self.K))
@@ -207,4 +206,3 @@ class MultiProductPrimalDualAgent:
         self.history["revenue"].append(float(per_product_revenue.sum()))
         self.history["inventory"].append(int(self.remaining_inventory))
         self.history["lambda"].append(float(self.lmbd))
-

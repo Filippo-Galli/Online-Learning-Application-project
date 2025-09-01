@@ -11,66 +11,53 @@ from collections import Counter     # For counting frequency distributions
 # HEDGE ALGORITHM: EXPERT-BASED ONLINE LEARNING
 # =============================================================================
 
-class HedgeAgent:
+class HedgeAgent1D:
     """
-    Implementation of the Hedge algorithm for online learning with expert advice.
-    
-    The Hedge algorithm maintains weights over a set of experts (actions) and
-    updates these weights based on observed losses. It provides strong theoretical
-    guarantees for regret minimization in adversarial settings.
-    
-    Key Properties:
-    - Exponentially weighted average of experts
-    - Regret bound: O(√T log K) where K is number of experts, T is time horizon
-    - Robust to adversarial losses
+    Hedge algorithm agent for 1-dimensional expert problem.
+
+    This agent implements the multiplicative weights strategy where:
+    1. K arms are available, each with an initially equal probability
+    2. Action selection is probabilistic, weighted by the current arm weights
+    3. Rewards are clipped to [0, 1]
+    4. Losses are computed as (1 - reward) for weight updates
+    5. Weights are updated multiplicatively: w_i ← w_i * exp(-η * loss_i)
+    6. The learning rate (η) controls how quickly the agent adapts to losses
     """
-    
+
     def __init__(self, K, learning_rate):
         """
-        Initialize the Hedge algorithm.
-        
+        Initialize the HedgeAgent1D.
+
         Args:
-            K: Number of experts (actions/arms)
-            learning_rate: Step size for weight updates (typically O(√(log K / T)))
+            K (int): Number of available arms, i.e. number of possible prices (assumed equal for each type of product)
+            learning_rate (float): Learning rate η for the multiplicative weights update
         """
-        
-        self.K = K                                   # Number of experts/actions
-        self.learning_rate = learning_rate           # Learning rate parameter
-        self.weights = np.ones(K, dtype=float)       # Expert weights (start uniform)
-        self.x_t = np.ones(K, dtype=float) / K       # Probability distribution over experts
-        self.a_t = None                              # Last selected action
-        self.t = 0                                   # Current time step
+        self.K = K
+        self.lr = learning_rate
+        self.weights = np.ones(K, dtype=float)    # Initial equal weights (= 1) for all arms
+        self.prob = np.ones(K, dtype=float) / K   # Initial uniform probabilities
+        self.last_arm = 0                         # Index of the last pulled arm
 
     def pull_arm(self):
         """
-        Select an expert (action) according to current probability distribution.
-        
-        Uses the exponentially weighted average strategy where experts with
-        lower cumulative losses receive higher selection probabilities.
-        
+        Select an arm to pull based on the current weight distribution.
+
         Returns:
-            int: Index of selected expert/action
+            int: Index of the chosen arm
         """
-        # Compute probability distribution from current weights
-        self.x_t = self.weights / np.sum(self.weights)
+        self.prob = self.weights / self.weights.sum()      # Normalize weights to probabilities
+        self.last_arm = np.random.choice(np.arange(self.K), p=self.prob)
         
-        # Sample action according to probability distribution
-        self.a_t = np.random.choice(np.arange(self.K), p=self.x_t)
-        
-        return self.a_t
+        return self.last_arm
     
-    def update(self, l_t):
+    def update(self, reward_vector_01):
         """
-        Update expert weights based on observed losses.
-        
-        Uses exponential update rule: w_{i,t+1} = w_{i,t} * exp(-η * l_{i,t})
-        where η is the learning rate and l_{i,t} is the loss of expert i at time t.
-        
+        Update the arm weights based on observed rewards (full-feedback).
+
         Args:
-            l_t: Array of losses for each expert at current time step
+            reward_vector_01 (array-like): Vector of observed rewards for all arms
+                                           each in the range [0, 1]
+                                           1 = full reward, 0 = no reward
         """
-        # Exponential weight update: experts with higher losses get lower weights
-        self.weights *= np.exp(-self.learning_rate * l_t)
-        
-        # Increment time counter
-        self.t += 1
+        loss = 1.0 - np.clip(reward_vector_01, 0.0, 1.0)   # Compute loss as 1 - reward (clipped to [0, 1])
+        self.weights *= np.exp(-self.lr * loss)            # Multiplicative weights update rule

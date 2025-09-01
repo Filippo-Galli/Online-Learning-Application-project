@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt      # Plotting and visualization
 import scipy.stats as stats          # Statistical distributions and functions
 from scipy import optimize          # Optimization algorithms
 from collections import Counter     # For counting frequency distributions
+# =============================================================================
+# EXP3 ALGORITHM: EXPERT-BASED ONLINE LEARNING
+# =============================================================================
 
 class Exp3Agent:
     """
@@ -33,13 +36,13 @@ class Exp3Agent:
         """
         
         self.K = K                                   # Number of experts/actions
-        self.learning_rate = learning_rate           # Learning rate parameter
+        self.lr = learning_rate           # Learning rate parameter
         self.exploration_rate = exploration_rate     # Exploration parameter
         self.weights = np.ones(K, dtype=float)       # Expert weights (start uniform)
         self.x_t = np.ones(K, dtype=float) / K       # Probability distribution over experts
-        self.a_t = None                              # Last selected action
-        self.t = 0                                   # Current time step
-        self.prob_distribution = None                # Current probability distribution
+        self.a_t = None                               # Last selected action
+        self.t = 0                                    # Current time step
+        self.prob_distribution = None                 # Current probability distribution
 
     def pull_arm(self):
         """
@@ -60,7 +63,8 @@ class Exp3Agent:
         
         return self.a_t
     
-    def update(self, losses):
+
+    def update(self, reward_vector_01 ):
         """
         Update expert weights based on observed loss from chosen action.
         
@@ -70,13 +74,15 @@ class Exp3Agent:
             losses: Losses received from the chosen action
         """
         # Estimate loss for chosen action using importance weighting
-        estimated_loss = np.zeros(self.K)
-        
+
+        estimated_losses = np.zeros(self.K)
+
+        losses = 1.0 - np.clip(reward_vector_01, 0.0, 1.0)   # Compute loss as 1 - reward (clipped to [0, 1])
+
         # Importance-weighted loss estimate for the chosen action
-        estimated_loss[self.a_t] = losses[self.a_t] / self.prob_distribution[self.a_t]
-        
-        # Exponential weight update: experts with higher estimated losses get lower weights
-        self.weights *= np.exp(-self.learning_rate * estimated_loss)
-        
+        estimated_losses[self.a_t] = losses[self.a_t] / self.prob_distribution[self.a_t]
+
+        self.weights *= np.exp(-self.lr * estimated_losses)# Multiplicative weights update rule
+
         # Increment time counter
         self.t += 1
