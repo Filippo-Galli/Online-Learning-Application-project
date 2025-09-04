@@ -10,7 +10,7 @@ from collections import Counter     # For counting frequency distributions
 import sys
 sys.path.append('../utils')
 
-from Hedge import HedgeAgent
+from Hedge import HedgeAgent1D as HedgeAgent
 from EXP3_P import Exp3Agent
 
 import os
@@ -144,12 +144,13 @@ class PrimalDualAgent:
         else:
             normalized_L = np.ones_like(L_full) * 0.5
             
-        # Step 3: Update Hedge with losses (1 - normalized_L since we maximize)
-        losses = 1 - normalized_L
+        # Step 3: Update Hedge with L since we maximize L, equivalent to minimizing -L
+        # We convert to a reward vector in [0,1] for Hedge update
+        rew = normalized_L
         if(self.algorithm == 'hedge'):
-            self.hedge.update(losses)
+            self.hedge.update(rew)
         else:   
-            self.exp3.update(losses)
+            self.exp3.update(rew)
 
         # Step 4: Update Lagrangian multiplier using projected gradient ascent
         # λ_{t+1} = Proj_{[0, 1/ρ]}(λ_t - η * (ρ - c_t))
