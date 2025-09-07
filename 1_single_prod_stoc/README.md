@@ -31,7 +31,7 @@ This folder contains experiments for the fundamental multi-armed bandit problem 
 - Establishes baseline performance for algorithm comparison
 
 ### 2. Comparative Simulation
-- Runs both UCB1 and Thompson Sampling for 10,000 rounds
+- Runs both UCB1 and Thompson Sampling for 100,000 rounds
 - Tracks price selection frequency, cumulative revenue, and regret
 - Generates comprehensive performance plots
 
